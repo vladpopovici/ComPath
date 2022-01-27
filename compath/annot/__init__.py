@@ -13,12 +13,9 @@ __all__ = ['AnnotationObject', 'Point', 'PointSet', 'PolyLine', 'Polygon', 'WSIA
 
 import shapely.geometry as shg
 import shapely.affinity as sha
-import shapely.ops as sho
-import shapely
 import geojson as gj
 from abc import ABC, abstractmethod
 import numpy as np
-import collections
 
 
 ##-
@@ -180,7 +177,8 @@ class AnnotationObject(ABC):
         return gj.Feature(geometry=shg.mapping(self.geom),
                           properties=dict(object_type="annotation",
                                           annotation_type=self._annotation_type,
-                                          name=self._name)
+                                          name=self._name,
+                                          in_group=self._in_group)
                           )
 
     def fromGeoJSON(self, d: dict) -> None:
@@ -191,6 +189,8 @@ class AnnotationObject(ABC):
         self.geom = shg.shape(d["geometry"])
         try:
             self._name = d["properties"]["name"]
+            self._in_group = d["properties"]["in_group"]
+            self._annotation_type = d["properties"]["annotation_type"]
         except KeyError:
             pass
 
@@ -212,7 +212,7 @@ class WSIAnnotation(object):
     The coordinates are in image pixel coordinates at the specified magnification.
     """
 
-    def __init__(self, name: str, image_shape: tuple[int,int], magnification: float) -> None:
+    def __init__(self, name: str, image_shape: tuple[int,int], magnification: float, group_list: list[str]=[]) -> None:
         """Initialize an Annotation for a slide.
 
         :param name: (str) name of the annotation
@@ -227,6 +227,10 @@ class WSIAnnotation(object):
         # If an annotation does not belong to any group, it is assigned to
         # "NO_GROUP" entry.
         self._annots = {'NO_GROUP': list()}   # dict with annotation objects
+        if len(group_list) > 0:
+            # initialize the groups, aside from NO_GROUP
+            for g in group_list:
+                self._annots[g] = list()
 
         return
 
@@ -257,8 +261,7 @@ class WSIAnnotation(object):
 
     def resize(self, factor: float) -> None:
         self._magnification *= factor
-        self._image_shape['width'] *= factor
-        self._image_shape['height'] *= factor
+        self._image_shape = (self._image_shape[0]*factor, self._image_shape[1]*factor)
 
         for g in list(self._annots):   # for all groups
             for a in self._annots[g]:  # and all annotations in a group
@@ -303,36 +306,65 @@ class WSIAnnotation(object):
         # we save magnification and image extent as properties of individual
         # features/annotation objects.
 
-        # all_annots = []
-        # for a in self._annots:
-        #     b = a.asGeoJSON()
-        #     b["properties"]["magnification"] = self._magnification
-        #     b["properties"]["image_shape"] = self._image_shape
-        #     all_annots.append(b)
+        # Not all groups are saved: those empty are lost.
 
-        # return gj.FeatureCollection(all_annots)
-        raise NotImplementedError
+        all_annots = []
+        for group in self._annots:
+            for a in self._annots[group]:
+                b = a.asGeoJSON()
+                b["properties"]["magnification"] = self._magnification
+                b["properties"]["image_shape"] = self._image_shape
+                all_annots.append(b)
+
+        return gj.FeatureCollection(all_annots)
+
 
     def fromGeoJSON(self, d: dict) -> None:
         """Initialize an annotation from a dictionary compatible with GeoJSON specifications."""
-        # if d["type"].lower() != "featurecollection":
-        #     raise RuntimeError("Need a FeatureCollection as annotation! Got: " + d["type"])
+        if d["type"].lower() != "featurecollection":
+            raise RuntimeError("Need a FeatureCollection as annotation! Got: " + d["type"])
 
-        # self._annots.clear()
-        # mg, im_shape = None, None
-        # for a in d["features"]:
-        #     obj = createEmptyAnnotationObject(a["geometry"]["type"])
-        #     obj.fromGeoJSON(a)
-        #     self.add_annotation_object(obj)
-        #     if mg is None and "properties" in a:
-        #         mg = a["properties"]["magnification"]
-        #     if im_shape is None and "properties" in a:
-        #         im_shape = a["properties"]["image_shape"]
-        # self._magnification = mg
-        # self._image_shape = im_shape
+        self._annots.clear()
+        mg, im_shape = None, None
+        for a in d["features"]:
+            obj = WSIAnnotation._createEmptyAnnotationObject(a["geometry"]["type"])
+            obj.fromGeoJSON(a)
+            self.add_annotation_object(obj)
+            if mg is None and "properties" in a:
+                mg = a["properties"]["magnification"]
+            if im_shape is None and "properties" in a:
+                im_shape = a["properties"]["image_shape"]
+        self._magnification = mg
+        self._image_shape = im_shape
 
-        # return
-        raise NotImplementedError
+        return
+
+    @staticmethod
+    def _createEmptyAnnotationObject(annot_type: str) -> AnnotationObject:
+        """Function to create an empty annotation object of a desired type.
+
+        Args:
+            annot_type (str):
+                type of the annotation object:
+                DOT/POINT
+                POINTSET
+                POLYLINE/LINESTRING
+                POLYGON
+
+        """
+        obj = None
+        if annot_type.upper() == 'DOT' or annot_type.upper() == 'POINT':
+            obj = Point.empty_object()
+        elif annot_type.upper() == 'POINTSET':
+            obj = PointSet.empty_object()
+        elif annot_type.upper() == 'LINESTRING' or annot_type.upper() == 'POLYLINE':
+            obj = PolyLine.empty_object()
+        elif annot_type.upper() == 'POLYGON':
+            obj = Polygon.empty_object()
+        else:
+            raise RuntimeError("unknown annotation type: " + annot_type)
+        return obj
+
 ##-
 
 ##-
