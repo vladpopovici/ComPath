@@ -18,7 +18,11 @@ TIAX.UTILS.MISC: miscellanious utility functions.
 
 import numpy as np
 from skimage.util import img_as_uint
-from tiax.utils.mask import binary_mask
+from compath.mask import binary_mask
+import matplotlib
+import matplotlib.pyplot
+import numpy as np
+import skimage.draw as skd
 
 
 def rgb2ycbcr(im: np.ndarray) -> np.ndarray:
@@ -156,3 +160,75 @@ class CoordUtils:
             f = 2.0**(src_resolution - dst_resolution)
         
         return f*x, f*y
+
+
+def array_to_image(filename, X, cmap=matplotlib.cm.plasma, dpi=120.0,
+                   invert_y=True):
+    """Produce a visual representation of a data matrix.
+
+    Parameters:
+        :param filename: str
+            name of the file to save the image to
+        :param X: numpy.array (2D)
+            the data matrix to be converted to a raster image
+        :param cmap:  matplotlib.cm
+            color map
+        :param dpi: float
+            image resolution (DPI)
+        :param invert_y: bool
+            should the y-axis (rows) be inverted, such that the top
+            of the matrix (low row counts) would correspond to low
+            y-values?
+    """
+
+    # From SciPy cookbooks, https://scipy-cookbook.readthedocs.io/items/Matplotlib_converting_a_matrix_to_a_raster_image.html
+
+    figsize = (np.array(X.shape) / float(dpi))[::-1]
+    matplotlib.rcParams.update({'figure.figsize': figsize})
+    fig = matplotlib.pyplot.figure(figsize=figsize)
+    matplotlib.pyplot.axes([0, 0, 1, 1])  # Make the plot occupy the whole canvas
+    matplotlib.pyplot.axis('off')
+    fig.set_size_inches(figsize)
+
+    matplotlib.pyplot.imshow(X, origin='upper' if invert_y else 'lower',
+                             aspect='equal', cmap=cmap)
+
+    matplotlib.pyplot.savefig(filename, facecolor='white', edgecolor='black', dpi=dpi)
+    matplotlib.pyplot.close(fig)
+
+    return
+
+
+def mark_points(image: np.array, points: np.array, radius: int, color: tuple,
+                in_situ: bool = True) -> np.array:
+    """Mark a series of points in an image.
+
+    Parameters:
+        :param image: an array in which to mark the points. May be multi-channel.
+        :param points: a N X 2 array with (row, col) coords for the N points
+        :param radius: the radius of the disc to be drawn at the positions
+        :param color: a tuple with R,G,B color specifications for the marks. If the
+            image is single channel, only the first value will be used (R)
+        :param in_situ: (bool) if True, the points are marked directly in the image,
+            otherwise a copy will be used
+
+    Return:
+        an array with the points marked in the image
+    """
+
+    if in_situ:
+        res = image
+    else:
+        res = image.copy()
+
+    if res.ndim == 2:
+        col = color[0]
+    else:
+        col = color[:3]
+
+    for p in points:
+        r, c = skd.circle(p[0], p[1], radius, shape=res.shape)
+        res[r,c,...] = col
+
+    return res
+    

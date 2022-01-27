@@ -9,7 +9,7 @@
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
 #
-# TIAX.UTILS.MASK - various functions for creating and manipulating image
+# COMPATH.MASK - various functions for creating and manipulating image
 # masks (i.e. binary images of 0s and 1s).
 #
 

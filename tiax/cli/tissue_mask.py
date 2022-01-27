@@ -28,7 +28,7 @@ from tiatoolbox import utils, wsicore
 from tiatoolbox.wsicore.slide_info import slide_info
 from tiatoolbox.wsicore.wsimeta import WSIMeta
 from tiax.tools.tissuemask import SimpleHETissueMasker, detect_foreground
-from tiax.utils.mask import mask_to_external_contours
+from compath.mask import mask_to_external_contours
 
 
 # minimum object sizes (areas, in px^2) for different magnifications to be considered as "interesting"

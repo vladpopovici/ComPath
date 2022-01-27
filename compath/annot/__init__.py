@@ -164,14 +164,6 @@ class AnnotationObject(ABC):
         self._in_group = d["in_group"]
 
 
-    # def asGeoJSON(self) -> dict:
-    #     """Return a dictionary compatible with GeoJSON specifications."""
-    #     raise NotImplementedError
-    #
-    # def fromGeoJSON(self, d: dict) -> None:
-    #     """Initialize the object from a dictionary compatible with GeoJSON specifications."""
-    #     raise NotImplementedError
-
     def asGeoJSON(self) -> dict:
         """Return a dictionary compatible with GeoJSON specifications."""
         return gj.Feature(geometry=shg.mapping(self.geom),
@@ -236,7 +228,10 @@ class WSIAnnotation(object):
 
     def add_annotation_object(self, a: AnnotationObject) -> None:
         # An annotation object must belong to a Group, be it NO_GROUP
-        self._annots[a.in_group].append(a)
+        if a.in_group in self._annots:
+            self._annots[a.in_group].append(a)
+        else:
+            self._annots[a.in_group] = [a]
         return
 
     def add_annotations(self, a: list) -> None:
@@ -347,7 +342,7 @@ class WSIAnnotation(object):
             annot_type (str):
                 type of the annotation object:
                 DOT/POINT
-                POINTSET
+                POINTSET/MULTIPOINT
                 POLYLINE/LINESTRING
                 POLYGON
 
@@ -355,7 +350,7 @@ class WSIAnnotation(object):
         obj = None
         if annot_type.upper() == 'DOT' or annot_type.upper() == 'POINT':
             obj = Point.empty_object()
-        elif annot_type.upper() == 'POINTSET':
+        elif annot_type.upper() == 'POINTSET' or annot_type.upper() == 'MULTIPOINT':
             obj = PointSet.empty_object()
         elif annot_type.upper() == 'LINESTRING' or annot_type.upper() == 'POLYLINE':
             obj = PolyLine.empty_object()
@@ -443,7 +438,7 @@ class PointSet(AnnotationObject):
 
     @staticmethod
     def empty_object():
-        p = PointSet([0,0])
+        p = PointSet([[0,0]])
         return p
 
     @property
@@ -479,7 +474,7 @@ class PointSet(AnnotationObject):
 
     def fromGeoJSON(self, d: dict) -> None:
         """Initialize the object from a dictionary compatible with GeoJSON specifications."""
-        if d["geometry"]["type"].lower() != "multipoint":
+        if d["geometry"]["type"].lower() not in ["pointset","multipoint"]:
             raise RuntimeError("Need a MultiPoint feature! Got: " + str(d))
 
         super().fromGeoJSON(d)

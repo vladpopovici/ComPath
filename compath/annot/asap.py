@@ -10,7 +10,7 @@ __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 """Import annotations from ASAP (XML) files. See also https://github.com/computationalpathologygroup/ASAP"""
 
 import xmltodict
-import tiax.annot as ann
+import annot as ann
 from pathlib import Path
 
 

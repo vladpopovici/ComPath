@@ -7,7 +7,7 @@
 #############################################################################
 
 #
-# STAINEXTRACT: extract stain intesity from RGB image.
+# STAIN: stain deconvolution from RGB image.
 #
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
