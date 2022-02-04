@@ -14,6 +14,7 @@ __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 __all__ = ['rgb2he', 'rgb2he_macenko']
 
 
+from typing import Tuple
 import numpy as np
 from scipy.linalg import eig
 import numpy as np
@@ -23,7 +24,7 @@ from skimage.exposure import rescale_intensity
 
 
 def rgb2he(img: np.ndarray, return_deconvolution_matrix: bool=False) \
-    -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
     """Stain separation for H&E slides: estimate the H- and E- signal intensity
     and the residuals. Use Ruifrok's method:
@@ -67,7 +68,7 @@ def rgb2he(img: np.ndarray, return_deconvolution_matrix: bool=False) \
 
 def rgb2he_macenko(img, D=None, alpha=1.0, beta=0.15, white=255.0,
                    return_deconvolution_matrix=False) \
-                   -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                   -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Performs stain separation from RGB images using the method in
     M Macenko, et al. "A method for normalizing histology slides for quantitative analysis",

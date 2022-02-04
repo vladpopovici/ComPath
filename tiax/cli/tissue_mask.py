@@ -27,7 +27,7 @@ from shapely.affinity import translate
 from tiatoolbox import utils, wsicore
 from tiatoolbox.wsicore.slide_info import slide_info
 from tiatoolbox.wsicore.wsimeta import WSIMeta
-from tiax.tools.tissuemask import SimpleHETissueMasker, detect_foreground
+from compath.tissue import detect_foreground
 from compath.mask import mask_to_external_contours
 
 
@@ -138,7 +138,9 @@ def tissue_mask(img_input: str, output_path: str,
         f = WORK_MAG_2 / WORK_MAG_1
         width = int(f * (xmax - xmin))
         height = int(f * (ymax - ymin))
-        
+        x0 = int(f * xmin)
+        y0 = int(f * ymin)
+
         img = wsi.read_rect(bounds_at_0[:2], (width, height), resolution=WORK_MAG_2, units="power")
         if method.lower() == 'h&e':
             mask, _ = detect_foreground(img, method='simple-he', min_area=min_obj_size[str(WORK_MAG_2)])
@@ -156,9 +158,14 @@ def tissue_mask(img_input: str, output_path: str,
             im_region.show()
 
         if mode == "save":
+            # first, get back to full plane at desired resolution
+            slide_shape = wsi.slide_dimensions(WORK_MAG_2, 'power')  # width, height
+            final_mask = np.zeros(slide_shape[::-1], dtype=np.uint8)
+            final_mask[y0:y0+height, x0:x0+width] = mask
+            # then, save
             utils.misc.imwrite(
                 output_path / Path(curr_file).with_suffix(".png").name,
-                mask.astype(np.uint8) * 255,
+                final_mask.astype(np.uint8) * 255,
             )
 
     return
