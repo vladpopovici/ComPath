@@ -16,6 +16,7 @@ TIAX.UTILS.MISC: miscellanious utility functions.
 @author: vlad
 """
 
+from typing import Tuple
 import numpy as np
 from skimage.util import img_as_uint
 from compath.mask import binary_mask
@@ -143,10 +144,10 @@ def RGBA2RGB(img: np.ndarray,
 #
 class CoordUtils:
     @staticmethod
-    def xy2xy(point: tuple[float,float], 
+    def xy2xy(point: Tuple[float,float], 
               src_resolution: float, 
               dst_resolution: float, 
-              units="power") -> tuple[float,float]:
+              units="power") -> Tuple[float,float]:
 
         x, y = point
         f = 1.0
