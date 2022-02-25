@@ -85,18 +85,17 @@ def main():
     __description__['output'] = [args.out]
 
     in_path = pathlib.Path(args.mri_path)
-    slide_name = in_path.name
-    out_path = pathlib.Path(args.out) / slide_name
+    out_path = (in_path.parent.parent / 'annot').expanduser().absolute()
 
     if not out_path.exists():
         out_path.mkdir()
 
     args.min_prob = max(0, min(args.min_prob, 1.0))
 
-    # (out_path/'.run').mkdir(exist_ok=True)
-    # if args.track_processing:
-    #     with open(out_path/'.run'/f'run-{__description__["name"]}.json', 'w') as f:
-    #         json.dump(__description__, f, indent=2)
+    (out_path/'.run').mkdir(exist_ok=True)
+    if args.track_processing:
+        with open(out_path/'.run'/f'run-{__description__["name"]}.json', 'w') as f:
+            json.dump(__description__, f, indent=2)
 
     keras = keras_import()
     nrm = IntensityNormalizer(0, 255)
@@ -129,20 +128,20 @@ def main():
         p = Polygon([xy for xy in zip(polys['coord'][k][0], polys['coord'][k][1])])
         annot.add_annotation_object(p)
 
-    with open("/home/vlad/tmp/nuclei.geojson" , 'w') as f:
+    with open(out_path / args.out , 'w') as f:
         gjson.dump(annot.asGeoJSON(), f, cls=NumpyJSONEncoder)
 
-    # annot_idx = out_path.parent / '.annot_idx.json'
-    # with TinyDB(annot_idx) as db:
-    #     q = Query()
-    #     r = db.search(q.unique_id == __description__['unique_id'])
-    #     if len(r) == 0:
-    #         # empty DB or no such record
-    #         db.insert({'unique_id' : __description__['unique_id'],
-    #                    'annotator': __description__['name'], 'parameters': __description__['params']})
-    #     else:
-    #         db.update({'annotator': __description__['name'], 'parameters': __description__['params']},
-    #                   q.unique_id == __description__['unique_id'])
+    annot_idx = out_path.parent / '.annot_idx.json'
+    with TinyDB(annot_idx) as db:
+        q = Query()
+        r = db.search(q.unique_id == __description__['unique_id'])
+        if len(r) == 0:
+            # empty DB or no such record
+            db.insert({'unique_id' : __description__['unique_id'],
+                       'annotator': __description__['name'], 'parameters': __description__['params']})
+        else:
+            db.update({'annotator': __description__['name'], 'parameters': __description__['params']},
+                      q.unique_id == __description__['unique_id'])
 
     return
 ##
