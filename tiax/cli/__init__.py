@@ -11,7 +11,7 @@ __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 import click
 import sys
 from tiax.cli.tissue_mask import tissue_mask
-from tiax import __version__, version_msg
+from compath import __version__, version_msg
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})

@@ -11,12 +11,13 @@
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 __all__ = ['AnnotationObject', 'Point', 'PointSet', 'PolyLine', 'Polygon', 'WSIAnnotation']
 
+from typing import Tuple, Union
 import shapely.geometry as shg
 import shapely.affinity as sha
 import geojson as gj
 from abc import ABC, abstractmethod
 import numpy as np
-
+from compath.magnif import Magnification
 
 ##-
 class AnnotationObject(ABC):
@@ -201,19 +202,26 @@ class AnnotationObject(ABC):
 class WSIAnnotation(object):
     """
     An annotation is a list of AnnotationObjects eventually grouped into AnnotationGroups.
-    The coordinates are in image pixel coordinates at the specified magnification.
+    The coordinates are in image pixel coordinates at the specified resolution (microns
+    per pixel - mpp).
     """
 
-    def __init__(self, name: str, image_shape: tuple[int,int], magnification: float, group_list: list[str]=[]) -> None:
+    def __init__(self, name: str, image_shape: Union[dict, Tuple[int,int]],
+                 mpp: float, group_list: list[str]=[]) -> None:
         """Initialize an Annotation for a slide.
 
         :param name: (str) name of the annotation
-        :param image_shape: (int, int) image shape (width, height)
-        :param magnification: (float) magnification (objective power)
+        :param image_shape: dict or (int, int) image shape (width, height). If dict,
+            'width' and 'height' keys must be used.
+        :param mpp: resolution at which the annotation was created (mpp relates
+            to objectve power)
         """
         self._name = name
-        self._image_shape = image_shape      # width, height
-        self._magnification = magnification
+        if image_shape is tuple:
+            self._image_shape = {'width': image_shape[0], 'height': image_shape[1]}
+        else:
+            self._image_shape = {'width': image_shape['width'], 'height': image_shape['height']}
+        self._mpp = mpp
 
         # The annotations are stored in a dict(), indexed by group names.
         # If an annotation does not belong to any group, it is assigned to
@@ -238,7 +246,7 @@ class WSIAnnotation(object):
         for o in a:
             self.add_annotation_object(o)  # takes care of groups as well
 
-    def get_image_shape(self) -> tuple[int, int]:
+    def get_image_shape(self) -> dict:
         return self._image_shape
 
     @property
@@ -251,12 +259,13 @@ class WSIAnnotation(object):
         """Return the annotation type as a string."""
         return 'WSIAnnotation'
 
-    def get_magnification(self) -> float:
-        return self._magnification
+    def get_mpp(self) -> float:
+        return self._mpp
 
     def resize(self, factor: float) -> None:
-        self._magnification *= factor
-        self._image_shape = (self._image_shape[0]*factor, self._image_shape[1]*factor)
+        self._mpp /= factor  # mpp varies inverse proportional with scaling of the objects
+        self._image_shape = {'width': self._image_shape['width']*factor,
+                             'height': self._image_shape['height']*factor}
 
         for g in list(self._annots):   # for all groups
             for a in self._annots[g]:  # and all annotations in a group
@@ -264,22 +273,22 @@ class WSIAnnotation(object):
 
         return
 
-    def set_magnification(self, magnification: float) -> None:
+    def set_mpp(self, mpp: float) -> None:
         """Scales the annotation to the desired magnification.
 
         :param magnfication: (float) target magnification
         """
-        if magnification != self._magnification:
-            f = magnification / self._magnification
+        if mpp != self._mpp:
+            f = self._mpp / mpp
             self.resize(f)
-            self._magnification = magnification
+            self._mpp = mpp
 
         return
 
     def asdict(self) -> dict:
         d = {'name': self._name,
              'image_shape': self._image_shape,
-             'magnification': self._magnification,
+             'mpp': self._mpp,
              'annotations': self._annots
              }
 
@@ -288,7 +297,7 @@ class WSIAnnotation(object):
     def fromdict(self, d: dict) -> None:
         self._name = d['name']
         self._image_shape = d['image_shape']
-        self._magnification = d['magnification']
+        self._mpp = d['mpp']
         self._annots.clear()
         self._annots = d['annotations']
 
@@ -307,7 +316,7 @@ class WSIAnnotation(object):
         for group in self._annots:
             for a in self._annots[group]:
                 b = a.asGeoJSON()
-                b["properties"]["magnification"] = self._magnification
+                b["properties"]["mpp"] = self._mpp
                 b["properties"]["image_shape"] = self._image_shape
                 all_annots.append(b)
 
@@ -326,10 +335,10 @@ class WSIAnnotation(object):
             obj.fromGeoJSON(a)
             self.add_annotation_object(obj)
             if mg is None and "properties" in a:
-                mg = a["properties"]["magnification"]
+                mg = a["properties"]["mpp"]
             if im_shape is None and "properties" in a:
                 im_shape = a["properties"]["image_shape"]
-        self._magnification = mg
+        self._mpp = mg
         self._image_shape = im_shape
 
         return
@@ -613,7 +622,7 @@ class Polygon(AnnotationObject):
         return np.array(self.geom.exterior.coords.xy).T
 
     def fromdict(self, d: dict) -> None:
-        """Intialize the objct from a dictionary."""
+        """Intialize the object from a dictionary."""
         super().fromdict(d)
         self.geom = shg.Polygon(zip(d["x"], d["y"]))
 

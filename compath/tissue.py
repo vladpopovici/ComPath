@@ -11,7 +11,7 @@
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 __version__ = 0.1
 
-__all__ = []
+__all__ = ['detect_foreground']
 
 import warnings
 import numpy as np

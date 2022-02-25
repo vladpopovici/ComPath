@@ -15,7 +15,6 @@ __all__ = ['rgb2he', 'rgb2he_macenko']
 
 
 from typing import Tuple
-import numpy as np
 from scipy.linalg import eig
 import numpy as np
 import cv2 as cv

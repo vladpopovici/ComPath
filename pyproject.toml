@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "compath"
+version = "0.2.5"
+description = "Computational Pathology toolkit"
+authors = ["Vlad Popovici <popovici@bioxlab.org>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+tensorflow = "^2.8.0"
+openslide-python = "^1.1.2"
+opencv-python = "^4.5.5"
+pyvips = "^2.1.16"
+simplejson = "^3.17.6"
+mahotas = "^1.4.12"
+ConfigArgParse = "^1.5.3"
+zarr = "^2.11.0"
+tqdm = "^4.62.3"
+tinydb = "^4.7.0"
+stardist = "^0.7.3"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
