@@ -33,7 +33,6 @@ import configargparse as opt
 import pathlib
 import zarr
 import numpy as np
-from tqdm import tqdm, trange
 from tinydb import TinyDB, Query
 from csbdeep.utils.tf import keras_import
 from csbdeep.data import Normalizer, normalize_mi_ma
@@ -92,9 +91,9 @@ def main():
 
     args.min_prob = max(0, min(args.min_prob, 1.0))
 
-    (out_path/'.run').mkdir(exist_ok=True)
+    (out_path.parent/'.run').mkdir(exist_ok=True)
     if args.track_processing:
-        with open(out_path/'.run'/f'run-{__description__["name"]}.json', 'w') as f:
+        with open(out_path.parent/'.run'/f'run-{__description__["name"]}.json', 'w') as f:
             json.dump(__description__, f, indent=2)
 
     keras = keras_import()

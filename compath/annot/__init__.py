@@ -17,7 +17,6 @@ import shapely.affinity as sha
 import geojson as gj
 from abc import ABC, abstractmethod
 import numpy as np
-from compath.magnif import Magnification
 
 ##-
 class AnnotationObject(ABC):

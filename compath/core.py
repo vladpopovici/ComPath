@@ -171,7 +171,7 @@ class WSIInfo(object):
 
 #####
 class NumpyImage:
-    """This is barely a namespace for collecting a number of useful
+    """This is merely a namespace for collecting a number of useful
     functions that are applied to images stored as Numpy arrays.
     Usually, such an image -either single channel or 3(4) channels -
     is stored as a H x W (x C) array, with H (height) rows and W (width)
