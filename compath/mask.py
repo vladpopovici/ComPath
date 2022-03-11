@@ -141,7 +141,7 @@ def masked_points(poly_line: np.ndarray, shape: tuple) -> tuple:
     if not np.all(poly_line[0,] == poly_line[-1,]):
         poly_line = np.concatenate((poly_line, [poly_line[0,]]))
 
-    # remeber: row, col in polygon()
+    # remember: row, col in polygon()
     r, c = skimage.draw.polygon(poly_line[:, 1], poly_line[:, 0], shape)
 
     return c, r

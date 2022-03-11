@@ -33,11 +33,13 @@ from pathlib import Path
 
 from shapely.affinity import translate
 
-from compath.core import WSIInfo, MRI
-from compath.annot import WSIAnnotation
+from compath.core import WSIInfo
 from compath.mask import mask_to_external_contours
 from compath.tissue import detect_foreground
 from compath.utils import NumpyJSONEncoder
+
+from cp_mri import MRI
+from cp_annot import WSIAnnotation
 
 # minimum object sizes (areas, in px^2) for different magnifications to be considered as "interesting"
 # mpp -> min obj size
